@@ -48,6 +48,17 @@
   of un-wedging itself than reversing in a straight line. Control then
   returns to DRIVE.
 
+  Kickstart (new): a stationary car (weight on the wheels, wheels not
+  already turning) often needs more PWM to *start* rolling than it needs to
+  *keep* rolling - static friction is higher than rolling friction, and
+  DRIVE_SPEED/REVERSE_SPEED are tuned for cruising, not breaking static
+  friction from a dead stop. So every time the motor goes from stopped to
+  commanded-moving (in either direction), it's driven at full power
+  (KICKSTART_SPEED) for a short fixed burst (KICKSTART_MS) before dropping
+  to whatever speed was actually requested. This fires automatically after
+  the initial start-wait, after a pause/resume, and after every recovery
+  reverse, since all of those already pass through motor_stop() first.
+
   Physical setup this was tuned for: 3 front HY-SRF05 sensors on a 45-degree
   bracket (left/right angled outward, middle straight ahead), mounted
   ~6-7cm off the ground. Track is a 1m-wide, 4m-long rectangular loop with
@@ -74,7 +85,7 @@
 #define MAX_DISTANCE_CM        150u    // ignore/clamp anything farther than this
 #define ECHO_TIMEOUT_US        9000UL  // ~150cm round-trip timeout
 
-#define STOP_DISTANCE_CM       10u     // genuine imminent collision - stop/steer/reverse
+#define STOP_DISTANCE_CM       25u     // genuine imminent collision - stop/steer/reverse
 #define CORNER_SLOW_DISTANCE_CM 80u    // front wall closer than this -> start slowing, still in DRIVE state
 #define CORNER_TRIGGER_DISTANCE_CM 60u // front wall closer than this -> commit to a hard-lock TURN
 
@@ -84,7 +95,7 @@
 // 1 = always turn right (clockwise), 0 = always turn left (counter-clockwise).
 #define TURN_DIRECTION_RIGHT    0u
 
-#define TURN_SPEED              150u    // fixed, slow speed while executing a hard-lock turn
+#define TURN_SPEED              80u    // fixed, slow speed while executing a hard-lock turn
 #define TURN_DURATION_MS        600u   // how long to hold full lock through a corner - THE main knob to tune
 #define TURN_MAX_EXTRA_MS       800u   // if still blocked after TURN_DURATION_MS, keep turning up to this much longer
 
@@ -94,16 +105,36 @@
 #define SERVO_MIN_DEG     45u    // maps to SERVO_MIN_US
 #define SERVO_MAX_DEG     135u   // maps to SERVO_MAX_US
 
-#define DRIVE_SPEED       200u   // 0-255 forward PWM speed on a clear straight
-#define MIN_SPEED         150u    // speed floor so the car doesn't stall approaching a corner
+#define DRIVE_SPEED       100u   // 0-255 forward PWM speed on a clear straight
+#define MIN_SPEED         70u    // speed floor so the car doesn't stall approaching a corner
 #define TURN_SPEED_REDUCTION 50u // max PWM cut for hard PID steering corrections on a straight
-#define REVERSE_SPEED     255u   // 0-255 reverse PWM speed used during recovery
+#define REVERSE_SPEED     100u   // 0-255 reverse PWM speed used during recovery
+
+// ---------- Kickstart tuning ----------
+// Fired once, automatically, on every transition from "stopped" to
+// "commanded to move" (forward or reverse) - see drive_forward()/
+// drive_reverse()/motor_stop() below. KICKSTART_SPEED should be full power
+// (255) so it reliably breaks static friction; KICKSTART_MS just needs to
+// be long enough for the wheels to actually start turning, not long enough
+// to build meaningful speed - keep it short so DRIVE_SPEED/TURN_SPEED/
+// REVERSE_SPEED (whichever follows it) still get to do their job.
+#define KICKSTART_SPEED    255u
+#define KICKSTART_MS       120u
+
+// How long to sit at zero power after reversing, before the wiggle-recovery
+// function returns control (and the main loop's next drive_forward() fires
+// its kickstart). motor_stop() only zeroes the PWM - it doesn't brake - so
+// without this pause the wheels/gearbox can still be coasting backward from
+// momentum when the forward kickstart lands, and it spends its burst
+// fighting that leftover rotation instead of breaking static friction going
+// forward. Keep it short; it's just there to let things actually go still.
+#define RECOVERY_SETTLE_MS 100u
 
 // ---------- Recovery (reverse + steering wiggle) tuning ----------
 // No rear sensor anymore, so recovery just reverses blind for a fixed time
 // while sweeping the steering lock-to-lock, rather than backing straight up.
 #define REVERSE_TIME_MS        600u    // total time spent reversing during a recovery
-#define WIGGLE_HALF_PERIOD_MS  150u    // how often the steering flips side while reversing
+#define WIGGLE_HALF_PERIOD_MS  200u    // how often the steering flips side while reversing
 
 // ---------- Stuck detection tuning ----------
 // If, while in STATE_DRIVE and commanding forward motion, all three front
@@ -113,7 +144,7 @@
 // legitimately holds a lock for a while and has its own timeout escape, so
 // checking there too would risk a false trigger mid-corner.
 #define STUCK_CHECK_WINDOW_MS   1000u   // how long with no real change before calling it "stuck"
-#define STUCK_DISTANCE_DELTA_CM 5u      // combined left+mid+right movement below this = not moving
+#define STUCK_DISTANCE_DELTA_CM 3u      // combined left+mid+right movement below this = not moving
 
 // ---------- micros() via Timer0 (normal mode, prescaler 64 -> 4us/tick) ----------
 static volatile uint32_t timer0_overflow_count = 0;
@@ -167,12 +198,29 @@ static void motor_timer_init(void) {
     OCR2B = 0;
 }
 
+// Set whenever the motor is commanded to a full stop; cleared the moment a
+// kickstart burst has been applied. This is the only state a kickstart
+// needs: "was the motor stopped since the last time it moved?"
+static uint8_t kickstart_needed = 1; // car starts stationary, so arm it from boot
+
 static void drive_forward(uint8_t speed) {
+    if (kickstart_needed && speed > 0) {
+        OCR2A = 0;             // IN2 = 0
+        OCR2B = KICKSTART_SPEED; // IN1 = full power, brief burst to break static friction
+        _delay_ms(KICKSTART_MS);
+        kickstart_needed = 0;
+    }
     OCR2A = 0;      // IN2 = 0
     OCR2B = speed;  // IN1 = PWM
 }
 
 static void drive_reverse(uint8_t speed) {
+    if (kickstart_needed && speed > 0) {
+        OCR2B = 0;             // IN1 = 0
+        OCR2A = KICKSTART_SPEED; // IN2 = full power, brief burst to break static friction
+        _delay_ms(KICKSTART_MS);
+        kickstart_needed = 0;
+    }
     OCR2B = 0;      // IN1 = 0
     OCR2A = speed;  // IN2 = PWM
 }
@@ -180,6 +228,7 @@ static void drive_reverse(uint8_t speed) {
 static void motor_stop(void) {
     OCR2A = 0;
     OCR2B = 0;
+    kickstart_needed = 1; // car is stationary again - next drive_forward/drive_reverse should kick
 }
 
 // ---------- GPIO setup ----------
@@ -402,7 +451,9 @@ static uint8_t stuck_check_and_update(uint32_t now_us, long dist_left, long dist
 // rear sensor there's no way to confirm the rear is clear, so this reverses
 // blind. Wiggling the steering lock-to-lock while backing up (rather than
 // holding one lock, or going straight) gives a wedged/spinning car a much
-// better chance of freeing itself.
+// better chance of freeing itself. motor_stop() below arms kickstart_needed,
+// so the drive_reverse() call right after it automatically gets a
+// full-power burst before settling to REVERSE_SPEED.
 static void recover_reverse_and_wiggle(void) {
     motor_stop();
     drive_reverse(REVERSE_SPEED);
@@ -417,6 +468,9 @@ static void recover_reverse_and_wiggle(void) {
     }
 
     motor_stop();
+    _delay_ms(RECOVERY_SETTLE_MS); // let the wheels actually stop spinning
+                                    // backward before the next forward
+                                    // kickstart tries to fire
     set_servo_angle(SERVO_CENTER_DEG);
 
     reset_steering();
@@ -453,6 +507,8 @@ int main(void) {
         // ---- Stop/resume: A0 going LOW pauses the car; it resumes once A0
         // goes HIGH again, starting fresh (motor stopped, wheels centered,
         // steering state reset while paused so nothing stale carries over).
+        // motor_stop() arms kickstart_needed, so the car gets a full-power
+        // burst on the way out of the pause too.
         if (!(PINC & (1 << PC0))) {
             motor_stop();
             set_servo_angle(SERVO_CENTER_DEG);
