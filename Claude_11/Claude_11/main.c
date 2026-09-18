@@ -76,6 +76,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h> // labs()
 
 // ---------- Tuning constants ----------
@@ -233,9 +234,9 @@ static void motor_stop(void) {
 
 // ---------- GPIO setup ----------
 static void gpio_init(void) {
-    // Port D: PD2 trig_left, PD3 motor_in1(OC2B), PD4 trig_mid -> outputs
+    // Port D: PD2 trig_left, PD3 motor_in1(OC2B), PD4 trig_mid, PD6 LED -> outputs
     //         PD5 echo_right, PD7 echo_mid -> inputs
-    DDRD |= (1 << PD2) | (1 << PD3) | (1 << PD4);
+    DDRD |= (1 << PD2) | (1 << PD3) | (1 << PD4) | (1 << PD6);
     DDRD &= ~((1 << PD5) | (1 << PD7));
 
     // Port B: PB0 trig_right, PB1 servo(OC1A), PB3 motor_in2(OC2A) -> outputs
@@ -244,8 +245,8 @@ static void gpio_init(void) {
     DDRB |= (1 << PB0) | (1 << PB1) | (1 << PB3);
     DDRB &= ~(1 << PB2);
 
-    // Port C: PC0 (A0) start-trigger input
-    DDRC &= ~(1 << PC0);
+    // Port C: PC0 (A0) start-trigger input, PC1 battery voltage input
+    DDRC &= ~((1 << PC0) | (1<<PC1));
 }
 
 // ---------- Ultrasonic sensor: trigger + echo timing ----------
@@ -483,6 +484,42 @@ typedef enum {
     STATE_TURN   // PID-driven, aggressively-tuned turn through a corner
 } DriveState;
 
+/************************************************************************/
+/* uint16_t read_a1                                                     */
+/* Läser av A1                                                          */
+/* Return:                                                              */
+/* Det returnerade värdet är ett 16-bitars uint-tal mellan 0 - 1023     */
+/************************************************************************/
+
+uint16_t read_a1() {
+    ADMUX = ((1 << REFS0) | 1);
+    ADCSRA = ((1 << ADEN) | (1 << ADSC) | (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2));
+    while ((ADCSRA & (1 << ADIF)) == 0) ;
+    ADCSRA = (1 << ADIF);
+    return ADC;
+}
+
+/************************************************************************/
+/* Battery low warning                                                  */
+/* Reads A1                                                             */
+/* If A1 <860 = 7 V, turn on led                                        */
+/* Voltage below 7V will cause trouble powering the Arduino             */
+/************************************************************************/
+void battery__low_warning () {
+    
+    if (read_a1()<860){
+        
+        PORTD |= (1<<6); // flash led
+        _delay_ms(250);
+        PORTD &= ~(1<<6);
+         _delay_ms(250);
+    }
+    
+    else {
+        PORTD &= ~(1<<6); // Turn led off
+    }    
+}
+
 int main(void) {
     gpio_init();
     timer0_micros_init();
@@ -490,12 +527,13 @@ int main(void) {
     motor_timer_init();
     motor_stop();
     set_servo_angle(SERVO_CENTER_DEG);
-
+    
     sei(); // enable interrupts (needed for micros())
 
     // Wait for the remote/start module to drive A0 (PC0) HIGH
     while (!(PINC & (1 << PC0))) {
         _delay_ms(20);
+        battery__low_warning();      
     }
 
     uint32_t last_pid_us = micros();
@@ -518,6 +556,7 @@ int main(void) {
 
             while (!(PINC & (1 << PC0))) {
                 _delay_ms(20);
+                battery__low_warning();   
             }
 
             last_pid_us = micros(); // fresh timing reference for dt after resuming
