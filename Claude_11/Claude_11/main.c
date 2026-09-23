@@ -86,7 +86,7 @@
 #define MAX_DISTANCE_CM        150u    // ignore/clamp anything farther than this
 #define ECHO_TIMEOUT_US        9000UL  // ~150cm round-trip timeout
 
-#define STOP_DISTANCE_CM       25u     // genuine imminent collision - stop/steer/reverse
+#define STOP_DISTANCE_CM       15u     // genuine imminent collision - stop/steer/reverse
 #define CORNER_SLOW_DISTANCE_CM 80u    // front wall closer than this -> start slowing, still in DRIVE state
 #define CORNER_TRIGGER_DISTANCE_CM 60u // front wall closer than this -> commit to a hard-lock TURN
 

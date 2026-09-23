@@ -1820,7 +1820,7 @@ int main(void) {
 
         // ---- Safety net: applies in either state ----
         if (dist_mid < STOP_DISTANCE_CM) {
-     b1e:	99 e1       	ldi	r25, 0x19	; 25
+     b1e:	9f e0       	ldi	r25, 0x0F	; 15
      b20:	49 16       	cp	r4, r25
      b22:	51 04       	cpc	r5, r1
      b24:	61 04       	cpc	r6, r1
@@ -2082,7 +2082,7 @@ int main(void) {
      cc6:	f1 2c       	mov	r15, r1
      cc8:	00 e0       	ldi	r16, 0x00	; 0
      cca:	10 e0       	ldi	r17, 0x00	; 0
-     ccc:	29 e1       	ldi	r18, 0x19	; 25
+     ccc:	2f e0       	ldi	r18, 0x0F	; 15
      cce:	30 e0       	ldi	r19, 0x00	; 0
      cd0:	40 e0       	ldi	r20, 0x00	; 0
      cd2:	50 e0       	ldi	r21, 0x00	; 0
@@ -2104,7 +2104,7 @@ int main(void) {
      cee:	c1 2c       	mov	r12, r1
      cf0:	d1 2c       	mov	r13, r1
      cf2:	f0 2d       	mov	r31, r0
-     cf4:	29 e1       	ldi	r18, 0x19	; 25
+     cf4:	2f e0       	ldi	r18, 0x0F	; 15
      cf6:	30 e0       	ldi	r19, 0x00	; 0
      cf8:	40 e0       	ldi	r20, 0x00	; 0
      cfa:	50 e0       	ldi	r21, 0x00	; 0
