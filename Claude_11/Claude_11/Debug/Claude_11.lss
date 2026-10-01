@@ -15,19 +15,19 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY
   5 .debug_aranges 000000e8  00000000  00000000  000014dc  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_info   0000177f  00000000  00000000  000015c4  2**0
+  6 .debug_info   0000177d  00000000  00000000  000015c4  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_abbrev 0000094c  00000000  00000000  00002d43  2**0
+  7 .debug_abbrev 00000948  00000000  00000000  00002d41  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_line   00000a1f  00000000  00000000  0000368f  2**0
+  8 .debug_line   00000a1f  00000000  00000000  00003689  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_frame  000003a0  00000000  00000000  000040b0  2**2
+  9 .debug_frame  000003a0  00000000  00000000  000040a8  2**2
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    00000786  00000000  00000000  00004450  2**0
+ 10 .debug_str    00000786  00000000  00000000  00004448  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_loc    0000143a  00000000  00000000  00004bd6  2**0
+ 11 .debug_loc    0000143a  00000000  00000000  00004bce  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 000000f0  00000000  00000000  00006010  2**0
+ 12 .debug_ranges 000000f0  00000000  00000000  00006008  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -49,7 +49,7 @@ Disassembly of section .text:
       34:	0c 94 51 00 	jmp	0xa2	; 0xa2 <__bad_interrupt>
       38:	0c 94 51 00 	jmp	0xa2	; 0xa2 <__bad_interrupt>
       3c:	0c 94 51 00 	jmp	0xa2	; 0xa2 <__bad_interrupt>
-      40:	0c 94 a3 04 	jmp	0x946	; 0x946 <__vector_16>
+      40:	0c 94 d7 04 	jmp	0x9ae	; 0x9ae <__vector_16>
       44:	0c 94 51 00 	jmp	0xa2	; 0xa2 <__bad_interrupt>
       48:	0c 94 51 00 	jmp	0xa2	; 0xa2 <__bad_interrupt>
       4c:	0c 94 51 00 	jmp	0xa2	; 0xa2 <__bad_interrupt>
@@ -1168,429 +1168,431 @@ static uint8_t stuck_check_and_update(uint32_t now_us, long dist_left, long dist
      7b2:	2f 90       	pop	r2
      7b4:	08 95       	ret
 
-000007b6 <drive_forward>:
+000007b6 <read_a1>:
+/* Return:                                                              */
+/* Det returnerade värdet är ett 16-bitars uint-tal mellan 0 - 1023     */
+/************************************************************************/
+
+static uint16_t read_a1() {
+    ADMUX = ((1 << REFS0) | 1);
+     7b6:	81 e4       	ldi	r24, 0x41	; 65
+     7b8:	80 93 7c 00 	sts	0x007C, r24	; 0x80007c <__TEXT_REGION_LENGTH__+0x7f807c>
+    ADCSRA = ((1 << ADEN) | (1 << ADSC) | (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2));
+     7bc:	87 ec       	ldi	r24, 0xC7	; 199
+     7be:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7f807a>
+    while ((ADCSRA & (1 << ADIF)) == 0) ;
+     7c2:	80 91 7a 00 	lds	r24, 0x007A	; 0x80007a <__TEXT_REGION_LENGTH__+0x7f807a>
+     7c6:	84 ff       	sbrs	r24, 4
+     7c8:	fc cf       	rjmp	.-8      	; 0x7c2 <read_a1+0xc>
+    ADCSRA = (1 << ADIF);
+     7ca:	80 e1       	ldi	r24, 0x10	; 16
+     7cc:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7f807a>
+    return ADC;
+     7d0:	80 91 78 00 	lds	r24, 0x0078	; 0x800078 <__TEXT_REGION_LENGTH__+0x7f8078>
+     7d4:	90 91 79 00 	lds	r25, 0x0079	; 0x800079 <__TEXT_REGION_LENGTH__+0x7f8079>
+}
+     7d8:	08 95       	ret
+
+000007da <drive_forward>:
 // kickstart burst has been applied. This is the only state a kickstart
 // needs: "was the motor stopped since the last time it moved?"
 static uint8_t kickstart_needed = 1; // car starts stationary, so arm it from boot
 
 static void drive_forward(uint8_t speed) {
     if (kickstart_needed && speed > 0) {
-     7b6:	90 91 28 01 	lds	r25, 0x0128	; 0x800128 <kickstart_needed>
-     7ba:	99 23       	and	r25, r25
-     7bc:	91 f0       	breq	.+36     	; 0x7e2 <drive_forward+0x2c>
-     7be:	88 23       	and	r24, r24
-     7c0:	81 f0       	breq	.+32     	; 0x7e2 <drive_forward+0x2c>
+     7da:	90 91 28 01 	lds	r25, 0x0128	; 0x800128 <kickstart_needed>
+     7de:	99 23       	and	r25, r25
+     7e0:	91 f0       	breq	.+36     	; 0x806 <__DATA_REGION_LENGTH__+0x6>
+     7e2:	88 23       	and	r24, r24
+     7e4:	81 f0       	breq	.+32     	; 0x806 <__DATA_REGION_LENGTH__+0x6>
         OCR2A = 0;             // IN2 = 0
-     7c2:	10 92 b3 00 	sts	0x00B3, r1	; 0x8000b3 <__TEXT_REGION_LENGTH__+0x7f80b3>
+     7e6:	10 92 b3 00 	sts	0x00B3, r1	; 0x8000b3 <__TEXT_REGION_LENGTH__+0x7f80b3>
         OCR2B = KICKSTART_SPEED; // IN1 = full power, brief burst to break static friction
-     7c6:	9f ef       	ldi	r25, 0xFF	; 255
-     7c8:	90 93 b4 00 	sts	0x00B4, r25	; 0x8000b4 <__TEXT_REGION_LENGTH__+0x7f80b4>
+     7ea:	9f ef       	ldi	r25, 0xFF	; 255
+     7ec:	90 93 b4 00 	sts	0x00B4, r25	; 0x8000b4 <__TEXT_REGION_LENGTH__+0x7f80b4>
 	#else
 		//round up by default
 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
 	#endif
 
 	__builtin_avr_delay_cycles(__ticks_dc);
-     7cc:	2f ef       	ldi	r18, 0xFF	; 255
-     7ce:	3b ed       	ldi	r19, 0xDB	; 219
-     7d0:	95 e0       	ldi	r25, 0x05	; 5
-     7d2:	21 50       	subi	r18, 0x01	; 1
-     7d4:	30 40       	sbci	r19, 0x00	; 0
-     7d6:	90 40       	sbci	r25, 0x00	; 0
-     7d8:	e1 f7       	brne	.-8      	; 0x7d2 <drive_forward+0x1c>
-     7da:	00 c0       	rjmp	.+0      	; 0x7dc <drive_forward+0x26>
-     7dc:	00 00       	nop
+     7f0:	2f ef       	ldi	r18, 0xFF	; 255
+     7f2:	3b ed       	ldi	r19, 0xDB	; 219
+     7f4:	95 e0       	ldi	r25, 0x05	; 5
+     7f6:	21 50       	subi	r18, 0x01	; 1
+     7f8:	30 40       	sbci	r19, 0x00	; 0
+     7fa:	90 40       	sbci	r25, 0x00	; 0
+     7fc:	e1 f7       	brne	.-8      	; 0x7f6 <drive_forward+0x1c>
+     7fe:	00 c0       	rjmp	.+0      	; 0x800 <__DATA_REGION_LENGTH__>
+     800:	00 00       	nop
         _delay_ms(KICKSTART_MS);
         kickstart_needed = 0;
-     7de:	10 92 28 01 	sts	0x0128, r1	; 0x800128 <kickstart_needed>
+     802:	10 92 28 01 	sts	0x0128, r1	; 0x800128 <kickstart_needed>
     }
     OCR2A = 0;      // IN2 = 0
-     7e2:	10 92 b3 00 	sts	0x00B3, r1	; 0x8000b3 <__TEXT_REGION_LENGTH__+0x7f80b3>
+     806:	10 92 b3 00 	sts	0x00B3, r1	; 0x8000b3 <__TEXT_REGION_LENGTH__+0x7f80b3>
     OCR2B = speed;  // IN1 = PWM
-     7e6:	80 93 b4 00 	sts	0x00B4, r24	; 0x8000b4 <__TEXT_REGION_LENGTH__+0x7f80b4>
-     7ea:	08 95       	ret
+     80a:	80 93 b4 00 	sts	0x00B4, r24	; 0x8000b4 <__TEXT_REGION_LENGTH__+0x7f80b4>
+     80e:	08 95       	ret
 
-000007ec <drive_reverse>:
+00000810 <drive_reverse>:
 }
 
 static void drive_reverse(uint8_t speed) {
     if (kickstart_needed && speed > 0) {
-     7ec:	90 91 28 01 	lds	r25, 0x0128	; 0x800128 <kickstart_needed>
-     7f0:	99 23       	and	r25, r25
-     7f2:	91 f0       	breq	.+36     	; 0x818 <__DATA_REGION_LENGTH__+0x18>
-     7f4:	88 23       	and	r24, r24
-     7f6:	81 f0       	breq	.+32     	; 0x818 <__DATA_REGION_LENGTH__+0x18>
+     810:	90 91 28 01 	lds	r25, 0x0128	; 0x800128 <kickstart_needed>
+     814:	99 23       	and	r25, r25
+     816:	91 f0       	breq	.+36     	; 0x83c <drive_reverse+0x2c>
+     818:	88 23       	and	r24, r24
+     81a:	81 f0       	breq	.+32     	; 0x83c <drive_reverse+0x2c>
         OCR2B = 0;             // IN1 = 0
-     7f8:	10 92 b4 00 	sts	0x00B4, r1	; 0x8000b4 <__TEXT_REGION_LENGTH__+0x7f80b4>
+     81c:	10 92 b4 00 	sts	0x00B4, r1	; 0x8000b4 <__TEXT_REGION_LENGTH__+0x7f80b4>
         OCR2A = KICKSTART_SPEED; // IN2 = full power, brief burst to break static friction
-     7fc:	9f ef       	ldi	r25, 0xFF	; 255
-     7fe:	90 93 b3 00 	sts	0x00B3, r25	; 0x8000b3 <__TEXT_REGION_LENGTH__+0x7f80b3>
-     802:	2f ef       	ldi	r18, 0xFF	; 255
-     804:	3b ed       	ldi	r19, 0xDB	; 219
-     806:	95 e0       	ldi	r25, 0x05	; 5
-     808:	21 50       	subi	r18, 0x01	; 1
-     80a:	30 40       	sbci	r19, 0x00	; 0
-     80c:	90 40       	sbci	r25, 0x00	; 0
-     80e:	e1 f7       	brne	.-8      	; 0x808 <__DATA_REGION_LENGTH__+0x8>
-     810:	00 c0       	rjmp	.+0      	; 0x812 <__DATA_REGION_LENGTH__+0x12>
-     812:	00 00       	nop
+     820:	9f ef       	ldi	r25, 0xFF	; 255
+     822:	90 93 b3 00 	sts	0x00B3, r25	; 0x8000b3 <__TEXT_REGION_LENGTH__+0x7f80b3>
+     826:	2f ef       	ldi	r18, 0xFF	; 255
+     828:	3b ed       	ldi	r19, 0xDB	; 219
+     82a:	95 e0       	ldi	r25, 0x05	; 5
+     82c:	21 50       	subi	r18, 0x01	; 1
+     82e:	30 40       	sbci	r19, 0x00	; 0
+     830:	90 40       	sbci	r25, 0x00	; 0
+     832:	e1 f7       	brne	.-8      	; 0x82c <drive_reverse+0x1c>
+     834:	00 c0       	rjmp	.+0      	; 0x836 <drive_reverse+0x26>
+     836:	00 00       	nop
         _delay_ms(KICKSTART_MS);
         kickstart_needed = 0;
-     814:	10 92 28 01 	sts	0x0128, r1	; 0x800128 <kickstart_needed>
+     838:	10 92 28 01 	sts	0x0128, r1	; 0x800128 <kickstart_needed>
     }
     OCR2B = 0;      // IN1 = 0
-     818:	10 92 b4 00 	sts	0x00B4, r1	; 0x8000b4 <__TEXT_REGION_LENGTH__+0x7f80b4>
+     83c:	10 92 b4 00 	sts	0x00B4, r1	; 0x8000b4 <__TEXT_REGION_LENGTH__+0x7f80b4>
     OCR2A = speed;  // IN2 = PWM
-     81c:	80 93 b3 00 	sts	0x00B3, r24	; 0x8000b3 <__TEXT_REGION_LENGTH__+0x7f80b3>
-     820:	08 95       	ret
+     840:	80 93 b3 00 	sts	0x00B3, r24	; 0x8000b3 <__TEXT_REGION_LENGTH__+0x7f80b3>
+     844:	08 95       	ret
 
-00000822 <trigger_pulse>:
+00000846 <trigger_pulse>:
     // Port C: PC0 (A0) start-trigger input, PC1 battery voltage input
     DDRC &= ~((1 << PC0) | (1<<PC1));
 }
 
 // ---------- Ultrasonic sensor: trigger + echo timing ----------
 static void trigger_pulse(volatile uint8_t *port_reg, uint8_t bit) {
-     822:	fc 01       	movw	r30, r24
+     846:	fc 01       	movw	r30, r24
     *port_reg &= ~(1 << bit);
-     824:	20 81       	ld	r18, Z
-     826:	81 e0       	ldi	r24, 0x01	; 1
-     828:	90 e0       	ldi	r25, 0x00	; 0
-     82a:	02 c0       	rjmp	.+4      	; 0x830 <trigger_pulse+0xe>
-     82c:	88 0f       	add	r24, r24
-     82e:	99 1f       	adc	r25, r25
-     830:	6a 95       	dec	r22
-     832:	e2 f7       	brpl	.-8      	; 0x82c <trigger_pulse+0xa>
-     834:	98 2f       	mov	r25, r24
-     836:	90 95       	com	r25
-     838:	29 23       	and	r18, r25
-     83a:	20 83       	st	Z, r18
+     848:	20 81       	ld	r18, Z
+     84a:	81 e0       	ldi	r24, 0x01	; 1
+     84c:	90 e0       	ldi	r25, 0x00	; 0
+     84e:	02 c0       	rjmp	.+4      	; 0x854 <trigger_pulse+0xe>
+     850:	88 0f       	add	r24, r24
+     852:	99 1f       	adc	r25, r25
+     854:	6a 95       	dec	r22
+     856:	e2 f7       	brpl	.-8      	; 0x850 <trigger_pulse+0xa>
+     858:	98 2f       	mov	r25, r24
+     85a:	90 95       	com	r25
+     85c:	29 23       	and	r18, r25
+     85e:	20 83       	st	Z, r18
 	#else
 		//round up by default
 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
 	#endif
 
 	__builtin_avr_delay_cycles(__ticks_dc);
-     83c:	2a e0       	ldi	r18, 0x0A	; 10
-     83e:	2a 95       	dec	r18
-     840:	f1 f7       	brne	.-4      	; 0x83e <trigger_pulse+0x1c>
-     842:	00 c0       	rjmp	.+0      	; 0x844 <trigger_pulse+0x22>
+     860:	2a e0       	ldi	r18, 0x0A	; 10
+     862:	2a 95       	dec	r18
+     864:	f1 f7       	brne	.-4      	; 0x862 <trigger_pulse+0x1c>
+     866:	00 c0       	rjmp	.+0      	; 0x868 <trigger_pulse+0x22>
     _delay_us(2);
     *port_reg |= (1 << bit);
-     844:	20 81       	ld	r18, Z
-     846:	82 2b       	or	r24, r18
-     848:	80 83       	st	Z, r24
-     84a:	85 e3       	ldi	r24, 0x35	; 53
-     84c:	8a 95       	dec	r24
-     84e:	f1 f7       	brne	.-4      	; 0x84c <trigger_pulse+0x2a>
-     850:	00 00       	nop
+     868:	20 81       	ld	r18, Z
+     86a:	82 2b       	or	r24, r18
+     86c:	80 83       	st	Z, r24
+     86e:	85 e3       	ldi	r24, 0x35	; 53
+     870:	8a 95       	dec	r24
+     872:	f1 f7       	brne	.-4      	; 0x870 <trigger_pulse+0x2a>
+     874:	00 00       	nop
     _delay_us(10);
     *port_reg &= ~(1 << bit);
-     852:	80 81       	ld	r24, Z
-     854:	98 23       	and	r25, r24
-     856:	90 83       	st	Z, r25
-     858:	08 95       	ret
+     876:	80 81       	ld	r24, Z
+     878:	98 23       	and	r25, r24
+     87a:	90 83       	st	Z, r25
+     87c:	08 95       	ret
 
-0000085a <read_distance_cm>:
+0000087e <read_distance_cm>:
     }
     return micros() - start;
 }
 
 static long read_distance_cm(volatile uint8_t *trig_port, uint8_t trig_bit,
                               volatile uint8_t *echo_pin, uint8_t echo_bit) {
-     85a:	1f 93       	push	r17
-     85c:	cf 93       	push	r28
-     85e:	df 93       	push	r29
-     860:	ea 01       	movw	r28, r20
-     862:	12 2f       	mov	r17, r18
+     87e:	1f 93       	push	r17
+     880:	cf 93       	push	r28
+     882:	df 93       	push	r29
+     884:	ea 01       	movw	r28, r20
+     886:	12 2f       	mov	r17, r18
     trigger_pulse(trig_port, trig_bit);
-     864:	0e 94 11 04 	call	0x822	; 0x822 <trigger_pulse>
+     888:	0e 94 23 04 	call	0x846	; 0x846 <trigger_pulse>
     uint32_t duration = measure_echo_pulse(echo_pin, echo_bit);
-     868:	61 2f       	mov	r22, r17
-     86a:	ce 01       	movw	r24, r28
-     86c:	0e 94 d3 00 	call	0x1a6	; 0x1a6 <measure_echo_pulse>
+     88c:	61 2f       	mov	r22, r17
+     88e:	ce 01       	movw	r24, r28
+     890:	0e 94 d3 00 	call	0x1a6	; 0x1a6 <measure_echo_pulse>
 
     if (duration == 0) {
-     870:	61 15       	cp	r22, r1
-     872:	71 05       	cpc	r23, r1
-     874:	81 05       	cpc	r24, r1
-     876:	91 05       	cpc	r25, r1
-     878:	81 f0       	breq	.+32     	; 0x89a <read_distance_cm+0x40>
+     894:	61 15       	cp	r22, r1
+     896:	71 05       	cpc	r23, r1
+     898:	81 05       	cpc	r24, r1
+     89a:	91 05       	cpc	r25, r1
+     89c:	81 f0       	breq	.+32     	; 0x8be <read_distance_cm+0x40>
         return MAX_DISTANCE_CM; // no echo = treat as clear / out of range
     }
 
     long distance = (long)(duration / 58);
-     87a:	2a e3       	ldi	r18, 0x3A	; 58
-     87c:	30 e0       	ldi	r19, 0x00	; 0
-     87e:	40 e0       	ldi	r20, 0x00	; 0
-     880:	50 e0       	ldi	r21, 0x00	; 0
-     882:	0e 94 7a 09 	call	0x12f4	; 0x12f4 <__udivmodsi4>
+     89e:	2a e3       	ldi	r18, 0x3A	; 58
+     8a0:	30 e0       	ldi	r19, 0x00	; 0
+     8a2:	40 e0       	ldi	r20, 0x00	; 0
+     8a4:	50 e0       	ldi	r21, 0x00	; 0
+     8a6:	0e 94 7a 09 	call	0x12f4	; 0x12f4 <__udivmodsi4>
     if (distance > MAX_DISTANCE_CM) distance = MAX_DISTANCE_CM;
-     886:	27 39       	cpi	r18, 0x97	; 151
-     888:	31 05       	cpc	r19, r1
-     88a:	41 05       	cpc	r20, r1
-     88c:	51 05       	cpc	r21, r1
-     88e:	54 f4       	brge	.+20     	; 0x8a4 <read_distance_cm+0x4a>
+     8aa:	27 39       	cpi	r18, 0x97	; 151
+     8ac:	31 05       	cpc	r19, r1
+     8ae:	41 05       	cpc	r20, r1
+     8b0:	51 05       	cpc	r21, r1
+     8b2:	54 f4       	brge	.+20     	; 0x8c8 <read_distance_cm+0x4a>
 
     if (duration == 0) {
         return MAX_DISTANCE_CM; // no echo = treat as clear / out of range
     }
 
     long distance = (long)(duration / 58);
-     890:	62 2f       	mov	r22, r18
-     892:	73 2f       	mov	r23, r19
-     894:	84 2f       	mov	r24, r20
-     896:	95 2f       	mov	r25, r21
-     898:	09 c0       	rjmp	.+18     	; 0x8ac <read_distance_cm+0x52>
+     8b4:	62 2f       	mov	r22, r18
+     8b6:	73 2f       	mov	r23, r19
+     8b8:	84 2f       	mov	r24, r20
+     8ba:	95 2f       	mov	r25, r21
+     8bc:	09 c0       	rjmp	.+18     	; 0x8d0 <read_distance_cm+0x52>
                               volatile uint8_t *echo_pin, uint8_t echo_bit) {
     trigger_pulse(trig_port, trig_bit);
     uint32_t duration = measure_echo_pulse(echo_pin, echo_bit);
 
     if (duration == 0) {
         return MAX_DISTANCE_CM; // no echo = treat as clear / out of range
-     89a:	66 e9       	ldi	r22, 0x96	; 150
-     89c:	70 e0       	ldi	r23, 0x00	; 0
-     89e:	80 e0       	ldi	r24, 0x00	; 0
-     8a0:	90 e0       	ldi	r25, 0x00	; 0
-     8a2:	04 c0       	rjmp	.+8      	; 0x8ac <read_distance_cm+0x52>
+     8be:	66 e9       	ldi	r22, 0x96	; 150
+     8c0:	70 e0       	ldi	r23, 0x00	; 0
+     8c2:	80 e0       	ldi	r24, 0x00	; 0
+     8c4:	90 e0       	ldi	r25, 0x00	; 0
+     8c6:	04 c0       	rjmp	.+8      	; 0x8d0 <read_distance_cm+0x52>
     }
 
     long distance = (long)(duration / 58);
     if (distance > MAX_DISTANCE_CM) distance = MAX_DISTANCE_CM;
-     8a4:	66 e9       	ldi	r22, 0x96	; 150
-     8a6:	70 e0       	ldi	r23, 0x00	; 0
-     8a8:	80 e0       	ldi	r24, 0x00	; 0
-     8aa:	90 e0       	ldi	r25, 0x00	; 0
+     8c8:	66 e9       	ldi	r22, 0x96	; 150
+     8ca:	70 e0       	ldi	r23, 0x00	; 0
+     8cc:	80 e0       	ldi	r24, 0x00	; 0
+     8ce:	90 e0       	ldi	r25, 0x00	; 0
     return distance;
 }
-     8ac:	df 91       	pop	r29
-     8ae:	cf 91       	pop	r28
-     8b0:	1f 91       	pop	r17
-     8b2:	08 95       	ret
+     8d0:	df 91       	pop	r29
+     8d2:	cf 91       	pop	r28
+     8d4:	1f 91       	pop	r17
+     8d6:	08 95       	ret
 
-000008b4 <recover_reverse_and_wiggle>:
+000008d8 <recover_reverse_and_wiggle>:
 // blind. Wiggling the steering lock-to-lock while backing up (rather than
 // holding one lock, or going straight) gives a wedged/spinning car a much
 // better chance of freeing itself. motor_stop() below arms kickstart_needed,
 // so the drive_reverse() call right after it automatically gets a
 // full-power burst before settling to REVERSE_SPEED.
 static void recover_reverse_and_wiggle(void) {
-     8b4:	cf 92       	push	r12
-     8b6:	df 92       	push	r13
-     8b8:	ef 92       	push	r14
-     8ba:	ff 92       	push	r15
-     8bc:	cf 93       	push	r28
+     8d8:	cf 92       	push	r12
+     8da:	df 92       	push	r13
+     8dc:	ef 92       	push	r14
+     8de:	ff 92       	push	r15
+     8e0:	cf 93       	push	r28
     motor_stop();
-     8be:	0e 94 bb 00 	call	0x176	; 0x176 <motor_stop>
+     8e2:	0e 94 bb 00 	call	0x176	; 0x176 <motor_stop>
     drive_reverse(REVERSE_SPEED);
-     8c2:	84 e6       	ldi	r24, 0x64	; 100
-     8c4:	0e 94 f6 03 	call	0x7ec	; 0x7ec <drive_reverse>
+     8e6:	80 e5       	ldi	r24, 0x50	; 80
+     8e8:	0e 94 08 04 	call	0x810	; 0x810 <drive_reverse>
 
     uint32_t recover_start_us = micros();
-     8c8:	0e 94 5a 00 	call	0xb4	; 0xb4 <micros>
-     8cc:	6b 01       	movw	r12, r22
-     8ce:	7c 01       	movw	r14, r24
+     8ec:	0e 94 5a 00 	call	0xb4	; 0xb4 <micros>
+     8f0:	6b 01       	movw	r12, r22
+     8f2:	7c 01       	movw	r14, r24
     uint8_t steer_right = (uint8_t)TURN_DIRECTION_RIGHT; // arbitrary starting side
-     8d0:	c0 e0       	ldi	r28, 0x00	; 0
+     8f4:	c0 e0       	ldi	r28, 0x00	; 0
 
     while ((micros() - recover_start_us) < ((uint32_t)REVERSE_TIME_MS * 1000UL)) {
-     8d2:	14 c0       	rjmp	.+40     	; 0x8fc <recover_reverse_and_wiggle+0x48>
+     8f6:	14 c0       	rjmp	.+40     	; 0x920 <__stack+0x21>
         set_servo_angle(steer_right ? SERVO_MAX_DEG : SERVO_MIN_DEG);
-     8d4:	cc 23       	and	r28, r28
-     8d6:	11 f0       	breq	.+4      	; 0x8dc <recover_reverse_and_wiggle+0x28>
-     8d8:	87 e8       	ldi	r24, 0x87	; 135
-     8da:	01 c0       	rjmp	.+2      	; 0x8de <recover_reverse_and_wiggle+0x2a>
-     8dc:	8d e2       	ldi	r24, 0x2D	; 45
-     8de:	0e 94 93 00 	call	0x126	; 0x126 <set_servo_angle>
+     8f8:	cc 23       	and	r28, r28
+     8fa:	11 f0       	breq	.+4      	; 0x900 <__stack+0x1>
+     8fc:	87 e8       	ldi	r24, 0x87	; 135
+     8fe:	01 c0       	rjmp	.+2      	; 0x902 <__stack+0x3>
+     900:	8d e2       	ldi	r24, 0x2D	; 45
+     902:	0e 94 93 00 	call	0x126	; 0x126 <set_servo_angle>
 	#else
 		//round up by default
 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
 	#endif
 
 	__builtin_avr_delay_cycles(__ticks_dc);
-     8e2:	2f ef       	ldi	r18, 0xFF	; 255
-     8e4:	83 ec       	ldi	r24, 0xC3	; 195
-     8e6:	99 e0       	ldi	r25, 0x09	; 9
-     8e8:	21 50       	subi	r18, 0x01	; 1
-     8ea:	80 40       	sbci	r24, 0x00	; 0
-     8ec:	90 40       	sbci	r25, 0x00	; 0
-     8ee:	e1 f7       	brne	.-8      	; 0x8e8 <recover_reverse_and_wiggle+0x34>
-     8f0:	00 c0       	rjmp	.+0      	; 0x8f2 <recover_reverse_and_wiggle+0x3e>
-     8f2:	00 00       	nop
+     906:	2f ef       	ldi	r18, 0xFF	; 255
+     908:	83 ec       	ldi	r24, 0xC3	; 195
+     90a:	99 e0       	ldi	r25, 0x09	; 9
+     90c:	21 50       	subi	r18, 0x01	; 1
+     90e:	80 40       	sbci	r24, 0x00	; 0
+     910:	90 40       	sbci	r25, 0x00	; 0
+     912:	e1 f7       	brne	.-8      	; 0x90c <__stack+0xd>
+     914:	00 c0       	rjmp	.+0      	; 0x916 <__stack+0x17>
+     916:	00 00       	nop
         _delay_ms(WIGGLE_HALF_PERIOD_MS);
         steer_right = !steer_right;
-     8f4:	81 e0       	ldi	r24, 0x01	; 1
-     8f6:	c1 11       	cpse	r28, r1
-     8f8:	80 e0       	ldi	r24, 0x00	; 0
-     8fa:	c8 2f       	mov	r28, r24
+     918:	81 e0       	ldi	r24, 0x01	; 1
+     91a:	c1 11       	cpse	r28, r1
+     91c:	80 e0       	ldi	r24, 0x00	; 0
+     91e:	c8 2f       	mov	r28, r24
     drive_reverse(REVERSE_SPEED);
 
     uint32_t recover_start_us = micros();
     uint8_t steer_right = (uint8_t)TURN_DIRECTION_RIGHT; // arbitrary starting side
 
     while ((micros() - recover_start_us) < ((uint32_t)REVERSE_TIME_MS * 1000UL)) {
-     8fc:	0e 94 5a 00 	call	0xb4	; 0xb4 <micros>
-     900:	dc 01       	movw	r26, r24
-     902:	cb 01       	movw	r24, r22
-     904:	8c 19       	sub	r24, r12
-     906:	9d 09       	sbc	r25, r13
-     908:	ae 09       	sbc	r26, r14
-     90a:	bf 09       	sbc	r27, r15
-     90c:	80 3c       	cpi	r24, 0xC0	; 192
-     90e:	97 42       	sbci	r25, 0x27	; 39
-     910:	a9 40       	sbci	r26, 0x09	; 9
-     912:	b1 05       	cpc	r27, r1
-     914:	f8 f2       	brcs	.-66     	; 0x8d4 <recover_reverse_and_wiggle+0x20>
+     920:	0e 94 5a 00 	call	0xb4	; 0xb4 <micros>
+     924:	dc 01       	movw	r26, r24
+     926:	cb 01       	movw	r24, r22
+     928:	8c 19       	sub	r24, r12
+     92a:	9d 09       	sbc	r25, r13
+     92c:	ae 09       	sbc	r26, r14
+     92e:	bf 09       	sbc	r27, r15
+     930:	80 3c       	cpi	r24, 0xC0	; 192
+     932:	97 42       	sbci	r25, 0x27	; 39
+     934:	a9 40       	sbci	r26, 0x09	; 9
+     936:	b1 05       	cpc	r27, r1
+     938:	f8 f2       	brcs	.-66     	; 0x8f8 <recover_reverse_and_wiggle+0x20>
         set_servo_angle(steer_right ? SERVO_MAX_DEG : SERVO_MIN_DEG);
         _delay_ms(WIGGLE_HALF_PERIOD_MS);
         steer_right = !steer_right;
     }
 
     motor_stop();
-     916:	0e 94 bb 00 	call	0x176	; 0x176 <motor_stop>
-     91a:	8f ef       	ldi	r24, 0xFF	; 255
-     91c:	91 ee       	ldi	r25, 0xE1	; 225
-     91e:	24 e0       	ldi	r18, 0x04	; 4
-     920:	81 50       	subi	r24, 0x01	; 1
-     922:	90 40       	sbci	r25, 0x00	; 0
-     924:	20 40       	sbci	r18, 0x00	; 0
-     926:	e1 f7       	brne	.-8      	; 0x920 <__stack+0x21>
-     928:	00 c0       	rjmp	.+0      	; 0x92a <__stack+0x2b>
-     92a:	00 00       	nop
+     93a:	0e 94 bb 00 	call	0x176	; 0x176 <motor_stop>
+     93e:	8f ef       	ldi	r24, 0xFF	; 255
+     940:	91 ee       	ldi	r25, 0xE1	; 225
+     942:	24 e0       	ldi	r18, 0x04	; 4
+     944:	81 50       	subi	r24, 0x01	; 1
+     946:	90 40       	sbci	r25, 0x00	; 0
+     948:	20 40       	sbci	r18, 0x00	; 0
+     94a:	e1 f7       	brne	.-8      	; 0x944 <__stack+0x45>
+     94c:	00 c0       	rjmp	.+0      	; 0x94e <__stack+0x4f>
+     94e:	00 00       	nop
     _delay_ms(RECOVERY_SETTLE_MS); // let the wheels actually stop spinning
                                     // backward before the next forward
                                     // kickstart tries to fire
     set_servo_angle(SERVO_CENTER_DEG);
-     92c:	8a e5       	ldi	r24, 0x5A	; 90
-     92e:	0e 94 93 00 	call	0x126	; 0x126 <set_servo_angle>
+     950:	8a e5       	ldi	r24, 0x5A	; 90
+     952:	0e 94 93 00 	call	0x126	; 0x126 <set_servo_angle>
 
     reset_steering();
-     932:	0e 94 b4 02 	call	0x568	; 0x568 <reset_steering>
+     956:	0e 94 b4 02 	call	0x568	; 0x568 <reset_steering>
     reset_stuck_detector();
-     936:	0e 94 bf 02 	call	0x57e	; 0x57e <reset_stuck_detector>
+     95a:	0e 94 bf 02 	call	0x57e	; 0x57e <reset_stuck_detector>
 }
-     93a:	cf 91       	pop	r28
-     93c:	ff 90       	pop	r15
-     93e:	ef 90       	pop	r14
-     940:	df 90       	pop	r13
-     942:	cf 90       	pop	r12
-     944:	08 95       	ret
+     95e:	cf 91       	pop	r28
+     960:	ff 90       	pop	r15
+     962:	ef 90       	pop	r14
+     964:	df 90       	pop	r13
+     966:	cf 90       	pop	r12
+     968:	08 95       	ret
 
-00000946 <__vector_16>:
+0000096a <battery__low_warning>:
+/* If A1 <860 = 7 V, turn on led                                        */
+/* Voltage below 7V will cause trouble powering the Arduino             */
+/************************************************************************/
+static void battery__low_warning () {
+    
+    if (read_a1()<860){
+     96a:	0e 94 db 03 	call	0x7b6	; 0x7b6 <read_a1>
+     96e:	8c 35       	cpi	r24, 0x5C	; 92
+     970:	93 40       	sbci	r25, 0x03	; 3
+     972:	c8 f4       	brcc	.+50     	; 0x9a6 <battery__low_warning+0x3c>
+        
+        PORTD |= (1<<6); // flash led
+     974:	8b b1       	in	r24, 0x0b	; 11
+     976:	80 64       	ori	r24, 0x40	; 64
+     978:	8b b9       	out	0x0b, r24	; 11
+     97a:	8f ef       	ldi	r24, 0xFF	; 255
+     97c:	94 e3       	ldi	r25, 0x34	; 52
+     97e:	2c e0       	ldi	r18, 0x0C	; 12
+     980:	81 50       	subi	r24, 0x01	; 1
+     982:	90 40       	sbci	r25, 0x00	; 0
+     984:	20 40       	sbci	r18, 0x00	; 0
+     986:	e1 f7       	brne	.-8      	; 0x980 <battery__low_warning+0x16>
+     988:	00 c0       	rjmp	.+0      	; 0x98a <battery__low_warning+0x20>
+     98a:	00 00       	nop
+        _delay_ms(250);
+        PORTD &= ~(1<<6);
+     98c:	8b b1       	in	r24, 0x0b	; 11
+     98e:	8f 7b       	andi	r24, 0xBF	; 191
+     990:	8b b9       	out	0x0b, r24	; 11
+     992:	8f ef       	ldi	r24, 0xFF	; 255
+     994:	94 e3       	ldi	r25, 0x34	; 52
+     996:	2c e0       	ldi	r18, 0x0C	; 12
+     998:	81 50       	subi	r24, 0x01	; 1
+     99a:	90 40       	sbci	r25, 0x00	; 0
+     99c:	20 40       	sbci	r18, 0x00	; 0
+     99e:	e1 f7       	brne	.-8      	; 0x998 <battery__low_warning+0x2e>
+     9a0:	00 c0       	rjmp	.+0      	; 0x9a2 <battery__low_warning+0x38>
+     9a2:	00 00       	nop
+     9a4:	08 95       	ret
+         _delay_ms(250);
+    }
+    
+    else {
+        PORTD &= ~(1<<6); // Turn led off
+     9a6:	8b b1       	in	r24, 0x0b	; 11
+     9a8:	8f 7b       	andi	r24, 0xBF	; 191
+     9aa:	8b b9       	out	0x0b, r24	; 11
+     9ac:	08 95       	ret
+
+000009ae <__vector_16>:
 #define STUCK_DISTANCE_DELTA_CM 3u      // combined left+mid+right movement below this = not moving
 
 // ---------- micros() via Timer0 (normal mode, prescaler 64 -> 4us/tick) ----------
 static volatile uint32_t timer0_overflow_count = 0;
 
 ISR(TIMER0_OVF_vect) {
-     946:	1f 92       	push	r1
-     948:	0f 92       	push	r0
-     94a:	0f b6       	in	r0, 0x3f	; 63
-     94c:	0f 92       	push	r0
-     94e:	11 24       	eor	r1, r1
-     950:	8f 93       	push	r24
-     952:	9f 93       	push	r25
-     954:	af 93       	push	r26
-     956:	bf 93       	push	r27
+     9ae:	1f 92       	push	r1
+     9b0:	0f 92       	push	r0
+     9b2:	0f b6       	in	r0, 0x3f	; 63
+     9b4:	0f 92       	push	r0
+     9b6:	11 24       	eor	r1, r1
+     9b8:	8f 93       	push	r24
+     9ba:	9f 93       	push	r25
+     9bc:	af 93       	push	r26
+     9be:	bf 93       	push	r27
     timer0_overflow_count++;
-     958:	80 91 40 01 	lds	r24, 0x0140	; 0x800140 <timer0_overflow_count>
-     95c:	90 91 41 01 	lds	r25, 0x0141	; 0x800141 <timer0_overflow_count+0x1>
-     960:	a0 91 42 01 	lds	r26, 0x0142	; 0x800142 <timer0_overflow_count+0x2>
-     964:	b0 91 43 01 	lds	r27, 0x0143	; 0x800143 <timer0_overflow_count+0x3>
-     968:	01 96       	adiw	r24, 0x01	; 1
-     96a:	a1 1d       	adc	r26, r1
-     96c:	b1 1d       	adc	r27, r1
-     96e:	80 93 40 01 	sts	0x0140, r24	; 0x800140 <timer0_overflow_count>
-     972:	90 93 41 01 	sts	0x0141, r25	; 0x800141 <timer0_overflow_count+0x1>
-     976:	a0 93 42 01 	sts	0x0142, r26	; 0x800142 <timer0_overflow_count+0x2>
-     97a:	b0 93 43 01 	sts	0x0143, r27	; 0x800143 <timer0_overflow_count+0x3>
+     9c0:	80 91 40 01 	lds	r24, 0x0140	; 0x800140 <timer0_overflow_count>
+     9c4:	90 91 41 01 	lds	r25, 0x0141	; 0x800141 <timer0_overflow_count+0x1>
+     9c8:	a0 91 42 01 	lds	r26, 0x0142	; 0x800142 <timer0_overflow_count+0x2>
+     9cc:	b0 91 43 01 	lds	r27, 0x0143	; 0x800143 <timer0_overflow_count+0x3>
+     9d0:	01 96       	adiw	r24, 0x01	; 1
+     9d2:	a1 1d       	adc	r26, r1
+     9d4:	b1 1d       	adc	r27, r1
+     9d6:	80 93 40 01 	sts	0x0140, r24	; 0x800140 <timer0_overflow_count>
+     9da:	90 93 41 01 	sts	0x0141, r25	; 0x800141 <timer0_overflow_count+0x1>
+     9de:	a0 93 42 01 	sts	0x0142, r26	; 0x800142 <timer0_overflow_count+0x2>
+     9e2:	b0 93 43 01 	sts	0x0143, r27	; 0x800143 <timer0_overflow_count+0x3>
 }
-     97e:	bf 91       	pop	r27
-     980:	af 91       	pop	r26
-     982:	9f 91       	pop	r25
-     984:	8f 91       	pop	r24
-     986:	0f 90       	pop	r0
-     988:	0f be       	out	0x3f, r0	; 63
-     98a:	0f 90       	pop	r0
-     98c:	1f 90       	pop	r1
-     98e:	18 95       	reti
-
-00000990 <read_a1>:
-/* Return:                                                              */
-/* Det returnerade värdet är ett 16-bitars uint-tal mellan 0 - 1023     */
-/************************************************************************/
-
-uint16_t read_a1() {
-    ADMUX = ((1 << REFS0) | 1);
-     990:	81 e4       	ldi	r24, 0x41	; 65
-     992:	80 93 7c 00 	sts	0x007C, r24	; 0x80007c <__TEXT_REGION_LENGTH__+0x7f807c>
-    ADCSRA = ((1 << ADEN) | (1 << ADSC) | (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2));
-     996:	87 ec       	ldi	r24, 0xC7	; 199
-     998:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7f807a>
-    while ((ADCSRA & (1 << ADIF)) == 0) ;
-     99c:	80 91 7a 00 	lds	r24, 0x007A	; 0x80007a <__TEXT_REGION_LENGTH__+0x7f807a>
-     9a0:	84 ff       	sbrs	r24, 4
-     9a2:	fc cf       	rjmp	.-8      	; 0x99c <read_a1+0xc>
-    ADCSRA = (1 << ADIF);
-     9a4:	80 e1       	ldi	r24, 0x10	; 16
-     9a6:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7f807a>
-    return ADC;
-     9aa:	80 91 78 00 	lds	r24, 0x0078	; 0x800078 <__TEXT_REGION_LENGTH__+0x7f8078>
-     9ae:	90 91 79 00 	lds	r25, 0x0079	; 0x800079 <__TEXT_REGION_LENGTH__+0x7f8079>
-}
-     9b2:	08 95       	ret
-
-000009b4 <battery__low_warning>:
-/* If A1 <860 = 7 V, turn on led                                        */
-/* Voltage below 7V will cause trouble powering the Arduino             */
-/************************************************************************/
-void battery__low_warning () {
-    
-    if (read_a1()<860){
-     9b4:	0e 94 c8 04 	call	0x990	; 0x990 <read_a1>
-     9b8:	8c 35       	cpi	r24, 0x5C	; 92
-     9ba:	93 40       	sbci	r25, 0x03	; 3
-     9bc:	c8 f4       	brcc	.+50     	; 0x9f0 <battery__low_warning+0x3c>
-        
-        PORTD |= (1<<6); // flash led
-     9be:	8b b1       	in	r24, 0x0b	; 11
-     9c0:	80 64       	ori	r24, 0x40	; 64
-     9c2:	8b b9       	out	0x0b, r24	; 11
-     9c4:	8f ef       	ldi	r24, 0xFF	; 255
-     9c6:	94 e3       	ldi	r25, 0x34	; 52
-     9c8:	2c e0       	ldi	r18, 0x0C	; 12
-     9ca:	81 50       	subi	r24, 0x01	; 1
-     9cc:	90 40       	sbci	r25, 0x00	; 0
-     9ce:	20 40       	sbci	r18, 0x00	; 0
-     9d0:	e1 f7       	brne	.-8      	; 0x9ca <battery__low_warning+0x16>
-     9d2:	00 c0       	rjmp	.+0      	; 0x9d4 <battery__low_warning+0x20>
-     9d4:	00 00       	nop
-        _delay_ms(250);
-        PORTD &= ~(1<<6);
-     9d6:	8b b1       	in	r24, 0x0b	; 11
-     9d8:	8f 7b       	andi	r24, 0xBF	; 191
-     9da:	8b b9       	out	0x0b, r24	; 11
-     9dc:	8f ef       	ldi	r24, 0xFF	; 255
-     9de:	94 e3       	ldi	r25, 0x34	; 52
-     9e0:	2c e0       	ldi	r18, 0x0C	; 12
-     9e2:	81 50       	subi	r24, 0x01	; 1
-     9e4:	90 40       	sbci	r25, 0x00	; 0
-     9e6:	20 40       	sbci	r18, 0x00	; 0
-     9e8:	e1 f7       	brne	.-8      	; 0x9e2 <battery__low_warning+0x2e>
-     9ea:	00 c0       	rjmp	.+0      	; 0x9ec <battery__low_warning+0x38>
-     9ec:	00 00       	nop
-     9ee:	08 95       	ret
-         _delay_ms(250);
-    }
-    
-    else {
-        PORTD &= ~(1<<6); // Turn led off
-     9f0:	8b b1       	in	r24, 0x0b	; 11
-     9f2:	8f 7b       	andi	r24, 0xBF	; 191
-     9f4:	8b b9       	out	0x0b, r24	; 11
-     9f6:	08 95       	ret
+     9e6:	bf 91       	pop	r27
+     9e8:	af 91       	pop	r26
+     9ea:	9f 91       	pop	r25
+     9ec:	8f 91       	pop	r24
+     9ee:	0f 90       	pop	r0
+     9f0:	0f be       	out	0x3f, r0	; 63
+     9f2:	0f 90       	pop	r0
+     9f4:	1f 90       	pop	r1
+     9f6:	18 95       	reti
 
 000009f8 <main>:
+    else {
+        PORTD &= ~(1<<6); // Turn led off
     }    
 }
 
@@ -1623,7 +1625,8 @@ int main(void) {
      a26:	78 94       	sei
 
     // Wait for the remote/start module to drive A0 (PC0) HIGH
-    while (!(PINC & (1 << PC0))) {
+    // ! framför parentes = start modul på, utan ! start modul av
+    while ((PINC & (1 << PC0))) {
      a28:	0b c0       	rjmp	.+22     	; 0xa40 <main+0x48>
      a2a:	2f ef       	ldi	r18, 0xFF	; 255
      a2c:	39 ef       	ldi	r19, 0xF9	; 249
@@ -1636,14 +1639,14 @@ int main(void) {
      a3a:	00 00       	nop
         _delay_ms(20);
         battery__low_warning();      
-     a3c:	0e 94 da 04 	call	0x9b4	; 0x9b4 <battery__low_warning>
-    set_servo_angle(SERVO_CENTER_DEG);
+     a3c:	0e 94 b5 04 	call	0x96a	; 0x96a <battery__low_warning>
     
     sei(); // enable interrupts (needed for micros())
 
     // Wait for the remote/start module to drive A0 (PC0) HIGH
-    while (!(PINC & (1 << PC0))) {
-     a40:	30 9b       	sbis	0x06, 0	; 6
+    // ! framför parentes = start modul på, utan ! start modul av
+    while ((PINC & (1 << PC0))) {
+     a40:	30 99       	sbic	0x06, 0	; 6
      a42:	f3 cf       	rjmp	.-26     	; 0xa2a <main+0x32>
         _delay_ms(20);
         battery__low_warning();      
@@ -1693,13 +1696,13 @@ int main(void) {
      a6e:	9a 82       	std	Y+2, r9	; 0x02
      a70:	ab 82       	std	Y+3, r10	; 0x03
      a72:	bc 82       	std	Y+4, r11	; 0x04
-        // ---- Stop/resume: A0 going LOW pauses the car; it resumes once A0
         // goes HIGH again, starting fresh (motor stopped, wheels centered,
         // steering state reset while paused so nothing stale carries over).
         // motor_stop() arms kickstart_needed, so the car gets a full-power
         // burst on the way out of the pause too.
-        if (!(PINC & (1 << PC0))) {
-     a74:	30 99       	sbic	0x06, 0	; 6
+        // ! framför parentes = start modul på, utan ! start modul av
+        if ((PINC & (1 << PC0))) {
+     a74:	30 9b       	sbis	0x06, 0	; 6
      a76:	1f c0       	rjmp	.+62     	; 0xab6 <main+0xbe>
             motor_stop();
      a78:	0e 94 bb 00 	call	0x176	; 0x176 <motor_stop>
@@ -1725,7 +1728,7 @@ int main(void) {
      a9c:	00 00       	nop
                 _delay_ms(20);
                 battery__low_warning();   
-     a9e:	0e 94 da 04 	call	0x9b4	; 0x9b4 <battery__low_warning>
+     a9e:	0e 94 b5 04 	call	0x96a	; 0x96a <battery__low_warning>
             set_servo_angle(SERVO_CENTER_DEG);
             reset_steering();
             reset_stuck_detector();
@@ -1744,7 +1747,7 @@ int main(void) {
      aac:	7a 83       	std	Y+2, r23	; 0x02
      aae:	8b 83       	std	Y+3, r24	; 0x03
      ab0:	9c 83       	std	Y+4, r25	; 0x04
-        if (!(PINC & (1 << PC0))) {
+        if ((PINC & (1 << PC0))) {
             motor_stop();
             set_servo_angle(SERVO_CENTER_DEG);
             reset_steering();
@@ -1767,7 +1770,7 @@ int main(void) {
      abc:	62 e0       	ldi	r22, 0x02	; 2
      abe:	8b e2       	ldi	r24, 0x2B	; 43
      ac0:	90 e0       	ldi	r25, 0x00	; 0
-     ac2:	0e 94 2d 04 	call	0x85a	; 0x85a <read_distance_cm>
+     ac2:	0e 94 3f 04 	call	0x87e	; 0x87e <read_distance_cm>
      ac6:	6d 83       	std	Y+5, r22	; 0x05
      ac8:	7e 83       	std	Y+6, r23	; 0x06
      aca:	8f 83       	std	Y+7, r24	; 0x07
@@ -1787,7 +1790,7 @@ int main(void) {
      ae0:	64 e0       	ldi	r22, 0x04	; 4
      ae2:	8b e2       	ldi	r24, 0x2B	; 43
      ae4:	90 e0       	ldi	r25, 0x00	; 0
-     ae6:	0e 94 2d 04 	call	0x85a	; 0x85a <read_distance_cm>
+     ae6:	0e 94 3f 04 	call	0x87e	; 0x87e <read_distance_cm>
      aea:	2b 01       	movw	r4, r22
      aec:	3c 01       	movw	r6, r24
      aee:	af e3       	ldi	r26, 0x3F	; 63
@@ -1805,7 +1808,7 @@ int main(void) {
      b00:	60 e0       	ldi	r22, 0x00	; 0
      b02:	85 e2       	ldi	r24, 0x25	; 37
      b04:	90 e0       	ldi	r25, 0x00	; 0
-     b06:	0e 94 2d 04 	call	0x85a	; 0x85a <read_distance_cm>
+     b06:	0e 94 3f 04 	call	0x87e	; 0x87e <read_distance_cm>
      b0a:	69 87       	std	Y+9, r22	; 0x09
      b0c:	7a 87       	std	Y+10, r23	; 0x0a
      b0e:	8b 87       	std	Y+11, r24	; 0x0b
@@ -1820,7 +1823,7 @@ int main(void) {
 
         // ---- Safety net: applies in either state ----
         if (dist_mid < STOP_DISTANCE_CM) {
-     b1e:	9f e0       	ldi	r25, 0x0F	; 15
+     b1e:	9a e0       	ldi	r25, 0x0A	; 10
      b20:	49 16       	cp	r4, r25
      b22:	51 04       	cpc	r5, r1
      b24:	61 04       	cpc	r6, r1
@@ -1830,7 +1833,7 @@ int main(void) {
             // sensor to check anymore, so just reverse blind while wiggling
             // the steering to help clear whatever's ahead.
             recover_reverse_and_wiggle();
-     b2a:	0e 94 5a 04 	call	0x8b4	; 0x8b4 <recover_reverse_and_wiggle>
+     b2a:	0e 94 6c 04 	call	0x8d8	; 0x8d8 <recover_reverse_and_wiggle>
             last_pid_us = micros();
      b2e:	0e 94 5a 00 	call	0xb4	; 0xb4 <micros>
      b32:	69 83       	std	Y+1, r22	; 0x01
@@ -1865,7 +1868,7 @@ int main(void) {
      b60:	88 23       	and	r24, r24
      b62:	49 f0       	breq	.+18     	; 0xb76 <main+0x17e>
                 recover_reverse_and_wiggle();
-     b64:	0e 94 5a 04 	call	0x8b4	; 0x8b4 <recover_reverse_and_wiggle>
+     b64:	0e 94 6c 04 	call	0x8d8	; 0x8d8 <recover_reverse_and_wiggle>
                 last_pid_us = micros();
      b68:	0e 94 5a 00 	call	0xb4	; 0xb4 <micros>
      b6c:	69 83       	std	Y+1, r22	; 0x01
@@ -2043,7 +2046,7 @@ int main(void) {
      c90:	0f 90       	pop	r0
      c92:	0f 90       	pop	r0
      c94:	0f 2e       	mov	r0, r31
-     c96:	f4 e6       	ldi	r31, 0x64	; 100
+     c96:	f0 e5       	ldi	r31, 0x50	; 80
      c98:	8f 2e       	mov	r8, r31
      c9a:	91 2c       	mov	r9, r1
      c9c:	a1 2c       	mov	r10, r1
@@ -2082,7 +2085,7 @@ int main(void) {
      cc6:	f1 2c       	mov	r15, r1
      cc8:	00 e0       	ldi	r16, 0x00	; 0
      cca:	10 e0       	ldi	r17, 0x00	; 0
-     ccc:	2f e0       	ldi	r18, 0x0F	; 15
+     ccc:	2a e0       	ldi	r18, 0x0A	; 10
      cce:	30 e0       	ldi	r19, 0x00	; 0
      cd0:	40 e0       	ldi	r20, 0x00	; 0
      cd2:	50 e0       	ldi	r21, 0x00	; 0
@@ -2095,7 +2098,7 @@ int main(void) {
      cdc:	1f 92       	push	r1
      cde:	1f 92       	push	r1
      ce0:	1f 92       	push	r1
-     ce2:	24 e6       	ldi	r18, 0x64	; 100
+     ce2:	20 e5       	ldi	r18, 0x50	; 80
      ce4:	2f 93       	push	r18
      ce6:	0f 2e       	mov	r0, r31
      ce8:	f6 e4       	ldi	r31, 0x46	; 70
@@ -2104,7 +2107,7 @@ int main(void) {
      cee:	c1 2c       	mov	r12, r1
      cf0:	d1 2c       	mov	r13, r1
      cf2:	f0 2d       	mov	r31, r0
-     cf4:	2f e0       	ldi	r18, 0x0F	; 15
+     cf4:	2a e0       	ldi	r18, 0x0A	; 10
      cf6:	30 e0       	ldi	r19, 0x00	; 0
      cf8:	40 e0       	ldi	r20, 0x00	; 0
      cfa:	50 e0       	ldi	r21, 0x00	; 0
@@ -2116,7 +2119,7 @@ int main(void) {
      d08:	38 2f       	mov	r19, r24
      d0a:	29 2f       	mov	r18, r25
      d0c:	04 c0       	rjmp	.+8      	; 0xd16 <main+0x31e>
-     d0e:	64 e6       	ldi	r22, 0x64	; 100
+     d0e:	60 e5       	ldi	r22, 0x50	; 80
      d10:	70 e0       	ldi	r23, 0x00	; 0
      d12:	30 e0       	ldi	r19, 0x00	; 0
      d14:	20 e0       	ldi	r18, 0x00	; 0
@@ -2149,7 +2152,7 @@ int main(void) {
      d44:	b0 e0       	ldi	r27, 0x00	; 0
 
             drive_forward((uint8_t)speed);
-     d46:	0e 94 db 03 	call	0x7b6	; 0x7b6 <drive_forward>
+     d46:	0e 94 ed 03 	call	0x7da	; 0x7da <drive_forward>
             // Continuous wall-centering PID: keeps the car centered between
             // the two side boards on the straights. error > 0 = more room
             // on the right = steer right.
@@ -2257,8 +2260,8 @@ int main(void) {
      df0:	0e 94 93 00 	call	0x126	; 0x126 <set_servo_angle>
 
             drive_forward(TURN_SPEED);
-     df4:	80 e5       	ldi	r24, 0x50	; 80
-     df6:	0e 94 db 03 	call	0x7b6	; 0x7b6 <drive_forward>
+     df4:	82 e3       	ldi	r24, 0x32	; 50
+     df6:	0e 94 ed 03 	call	0x7da	; 0x7da <drive_forward>
 
             uint32_t elapsed_ms = (micros() - turn_start_us) / 1000UL;
      dfa:	0e 94 5a 00 	call	0xb4	; 0xb4 <micros>

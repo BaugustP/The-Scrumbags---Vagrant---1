@@ -499,24 +499,22 @@ END GROUP
                 0x0000057e        0x6 main.o
  .text.stuck_check_and_update
                 0x00000584      0x232 main.o
+ .text.read_a1  0x000007b6       0x24 main.o
  .text.drive_forward
-                0x000007b6       0x36 main.o
+                0x000007da       0x36 main.o
  .text.drive_reverse
-                0x000007ec       0x36 main.o
+                0x00000810       0x36 main.o
  .text.trigger_pulse
-                0x00000822       0x38 main.o
+                0x00000846       0x38 main.o
  .text.read_distance_cm
-                0x0000085a       0x5a main.o
+                0x0000087e       0x5a main.o
  .text.recover_reverse_and_wiggle
-                0x000008b4       0x92 main.o
- .text.__vector_16
-                0x00000946       0x4a main.o
-                0x00000946                __vector_16
- .text.read_a1  0x00000990       0x24 main.o
-                0x00000990                read_a1
+                0x000008d8       0x92 main.o
  .text.battery__low_warning
-                0x000009b4       0x44 main.o
-                0x000009b4                battery__low_warning
+                0x0000096a       0x44 main.o
+ .text.__vector_16
+                0x000009ae       0x4a main.o
+                0x000009ae                __vector_16
  .text.main     0x000009f8      0x460 main.o
                 0x000009f8                main
  .text.avr-libc.fplib
@@ -753,15 +751,15 @@ END GROUP
 .debug_pubnames
  *(.debug_pubnames)
 
-.debug_info     0x00000000     0x177f
+.debug_info     0x00000000     0x177d
  *(.debug_info .gnu.linkonce.wi.*)
  .debug_info    0x00000000      0x5f4 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
- .debug_info    0x000005f4     0x118b main.o
+ .debug_info    0x000005f4     0x1189 main.o
 
-.debug_abbrev   0x00000000      0x94c
+.debug_abbrev   0x00000000      0x948
  *(.debug_abbrev)
  .debug_abbrev  0x00000000      0x5a2 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
- .debug_abbrev  0x000005a2      0x3aa main.o
+ .debug_abbrev  0x000005a2      0x3a6 main.o
 
 .debug_line     0x00000000      0xa1f
  *(.debug_line .debug_line.* .debug_line_end)

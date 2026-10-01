@@ -86,7 +86,7 @@
 #define MAX_DISTANCE_CM        150u    // ignore/clamp anything farther than this
 #define ECHO_TIMEOUT_US        9000UL  // ~150cm round-trip timeout
 
-#define STOP_DISTANCE_CM       15u     // genuine imminent collision - stop/steer/reverse
+#define STOP_DISTANCE_CM       10u     // genuine imminent collision - stop/steer/reverse
 #define CORNER_SLOW_DISTANCE_CM 80u    // front wall closer than this -> start slowing, still in DRIVE state
 #define CORNER_TRIGGER_DISTANCE_CM 60u // front wall closer than this -> commit to a hard-lock TURN
 
@@ -96,7 +96,7 @@
 // 1 = always turn right (clockwise), 0 = always turn left (counter-clockwise).
 #define TURN_DIRECTION_RIGHT    0u
 
-#define TURN_SPEED              80u    // fixed, slow speed while executing a hard-lock turn
+#define TURN_SPEED              50u    // fixed, slow speed while executing a hard-lock turn
 #define TURN_DURATION_MS        600u   // how long to hold full lock through a corner - THE main knob to tune
 #define TURN_MAX_EXTRA_MS       800u   // if still blocked after TURN_DURATION_MS, keep turning up to this much longer
 
@@ -106,10 +106,10 @@
 #define SERVO_MIN_DEG     45u    // maps to SERVO_MIN_US
 #define SERVO_MAX_DEG     135u   // maps to SERVO_MAX_US
 
-#define DRIVE_SPEED       100u   // 0-255 forward PWM speed on a clear straight
+#define DRIVE_SPEED       80u   // 0-255 forward PWM speed on a clear straight
 #define MIN_SPEED         70u    // speed floor so the car doesn't stall approaching a corner
 #define TURN_SPEED_REDUCTION 50u // max PWM cut for hard PID steering corrections on a straight
-#define REVERSE_SPEED     100u   // 0-255 reverse PWM speed used during recovery
+#define REVERSE_SPEED     80u   // 0-255 reverse PWM speed used during recovery
 
 // ---------- Kickstart tuning ----------
 // Fired once, automatically, on every transition from "stopped" to
@@ -307,9 +307,9 @@ static float constrain_float(float x, float lo, float hi) {
 // Error = (right sensor distance) - (left sensor distance), in cm.
 // Positive error => more room on the right => steer right.
 // Output is added directly to SERVO_CENTER_DEG as a degree offset.
-#define STEER_KP  0.3f   // degrees of steering per cm of left/right imbalance
+#define STEER_KP  0.2f   // degrees of steering per cm of left/right imbalance
 #define STEER_KI  0.02f   // corrects any steady drift/bias - keep small
-#define STEER_KD  0.1f   // damps oscillation from sudden sensor jumps
+#define STEER_KD  0.01f   // damps oscillation from sudden sensor jumps
 #define STEER_INTEGRAL_LIMIT 150.0f // anti-windup clamp on the integral term (cm*s)
 
 typedef struct {
@@ -491,7 +491,7 @@ typedef enum {
 /* Det returnerade värdet är ett 16-bitars uint-tal mellan 0 - 1023     */
 /************************************************************************/
 
-uint16_t read_a1() {
+static uint16_t read_a1() {
     ADMUX = ((1 << REFS0) | 1);
     ADCSRA = ((1 << ADEN) | (1 << ADSC) | (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2));
     while ((ADCSRA & (1 << ADIF)) == 0) ;
@@ -505,7 +505,7 @@ uint16_t read_a1() {
 /* If A1 <860 = 7 V, turn on led                                        */
 /* Voltage below 7V will cause trouble powering the Arduino             */
 /************************************************************************/
-void battery__low_warning () {
+static void battery__low_warning () {
     
     if (read_a1()<860){
         
@@ -531,7 +531,8 @@ int main(void) {
     sei(); // enable interrupts (needed for micros())
 
     // Wait for the remote/start module to drive A0 (PC0) HIGH
-    while (!(PINC & (1 << PC0))) {
+    // ! framför parentes = start modul på, utan ! start modul av
+    while ((PINC & (1 << PC0))) {
         _delay_ms(20);
         battery__low_warning();      
     }
@@ -547,7 +548,8 @@ int main(void) {
         // steering state reset while paused so nothing stale carries over).
         // motor_stop() arms kickstart_needed, so the car gets a full-power
         // burst on the way out of the pause too.
-        if (!(PINC & (1 << PC0))) {
+        // ! framför parentes = start modul på, utan ! start modul av
+        if ((PINC & (1 << PC0))) {
             motor_stop();
             set_servo_angle(SERVO_CENTER_DEG);
             reset_steering();
